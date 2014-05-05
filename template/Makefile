@@ -104,6 +104,16 @@ $(HEX): $(OBJS) $(OBJS_AS)
 	$(OBJCOPY) -Obinary $(ELF) $(BIN)
 	$(SIZE) $(ELF)
 
+	sed -i -e '/^:04000003.\+$$/d' $(HEX) 	# XXX:
+ifneq ($(USE_SOFTDEVICE),blank)
+	sed -i -e 's/^:020000021000EC/:020000040001F9/' $(HEX)
+	sed -i -e 's/^:020000022000DC/:020000040002F8/' $(HEX)
+endif
+ifneq ($(SOFTDEVICE),)
+	# http://www.bialix.com/intelhex/
+	hexmerge.py -o $(OUTPUT_PATH)app_with_sd.hex $(HEX) $(SOFTDEVICE)
+endif
+
 size: $(ELF)
 	$(SIZE) $(ELF)
 
