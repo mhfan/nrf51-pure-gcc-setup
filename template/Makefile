@@ -69,9 +69,12 @@ VPATH = $(SOURCE_PATHS)
 
 OUTPUT_PATH = _build/
 
-CPUFLAGS = -mthumb -mcpu=cortex-m0 -march=armv6-m
+CPUFLAGS = -mthumb -mcpu=cortex-m0 -march=armv6-m -mabi=aapcs -mfloat-abi=soft
 CFLAGS += -std=gnu99 -c $(CPUFLAGS) -Wall -D$(DEVICE) -D$(BOARD) $(CMSIS_INCLUDE) $(LIBRARY_INCLUDES) -MD
 LDFLAGS += $(CPUFLAGS) -L $(TEMPLATE_PATH) -T $(LINKER_SCRIPT) -Wl,-Map=$(OUTPUT_PATH)$(OUTPUT_NAME).Map
+
+# Assembler flags
+ASMFLAGS += -x assembler-with-cpp $(CMSIS_INCLUDE) $(LIBRARY_INCLUDES)
 
 HEX = $(OUTPUT_PATH)$(OUTPUT_NAME).hex
 ELF = $(OUTPUT_PATH)$(OUTPUT_NAME).elf
@@ -81,7 +84,7 @@ SRCS = $(SYSTEM_FILE) $(notdir $(APPLICATION_SRCS))
 OBJS = $(addprefix $(OUTPUT_PATH), $(SRCS:.c=.o)) $(addprefix $(LIBS_PATH),$(APPLICATION_LIBS))
 DEPS = $(addprefix $(OUTPUT_PATH), $(SRCS:.c=.d))
 SRCS_AS = $(START_CODE)
-OBJS_AS = $(addprefix $(OUTPUT_PATH), $(SRCS_AS:.s=.os))
+OBJS_AS = $(addprefix $(OUTPUT_PATH), $(SRCS_AS:.s=.o))
 
 JLINK_OPTIONS = -device nrf51822 -if swd -speed 1000
 
@@ -106,11 +109,11 @@ size: $(ELF)
 
 $(OUTPUT_PATH)%.o: %.c
 	$(MAKE_BUILD_FOLDER)
-	$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OUTPUT_PATH)%.os: %.s
+$(OUTPUT_PATH)%.o: %.s
 	$(MAKE_BUILD_FOLDER)
-	$(AS) $< -o $@
+	$(CC) $(ASMFLAGS) -c $< -o $@
 
 -include $(DEPS)
 
